@@ -100,6 +100,39 @@ html, body, [class*="css"] {
 section[data-testid="stSidebar"] .stButton button {justify-content:flex-start; font-family:'Inter',sans-serif;}
 .nav-active button {background-color: rgba(24,160,251,.14) !important; border-color:#18a0fb !important; color:#0d8ce6 !important;}
 div[data-testid="stMetricValue"] {font-size: 1.1rem;}
+
+/* -----------------------------------------------------------
+   Canvas diam di tempat — hanya sidebar (menu) yang scroll.
+   Sidebar & area utama masing-masing jadi panel tinggi-penuh
+   dengan scroll internal sendiri, meniru layout app Ploots (JS):
+   sidebar overflow-y:auto, main tetap diam/fixed di viewport.
+   ----------------------------------------------------------- */
+html, body {
+    overflow: hidden !important;
+    height: 100vh;
+}
+div[data-testid="stAppViewContainer"] {
+    height: 100vh;
+    overflow: hidden;
+}
+section[data-testid="stSidebar"] {
+    height: 100vh;
+}
+section[data-testid="stSidebar"] > div:first-child {
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+}
+div[data-testid="stMain"] {
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+div[data-testid="stMain"] > div.block-container {
+    padding-top: 2rem;
+    padding-bottom: 3rem;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -209,17 +242,17 @@ CHART_LABELS = {d["value"]: d["label"] for d in CHART_TYPE_DEFS}
 MULTI_Y_TYPES = {"bar_group", "bar_stack", "line", "area", "box", "violin", "heatmap"}
 
 NAV_PANELS = [
-    {"key": "data", "label": "Data", "icon": ":material/table_view:"},
-    {"key": "chart_type", "label": "Jenis Diagram", "icon": ":material/donut_large:"},
+    {"key": "data", "label": "Data", "icon": ":material/database:"},
+    {"key": "chart_type", "label": "Jenis Diagram", "icon": ":material/bar_chart:"},
     {"key": "color", "label": "Warna & Gaya", "icon": ":material/palette:"},
-    {"key": "titles", "label": "Judul & Label", "icon": ":material/title:"},
+    {"key": "titles", "label": "Judul & Label", "icon": ":material/description:"},
     {"key": "xaxis", "label": "Sumbu X", "icon": ":material/swap_horiz:"},
     {"key": "yaxis", "label": "Sumbu Y", "icon": ":material/swap_vert:"},
-    {"key": "series", "label": "Series & Nilai", "icon": ":material/stacked_line_chart:"},
-    {"key": "legend", "label": "Legend", "icon": ":material/list_alt:"},
-    {"key": "frame", "label": "Bingkai", "icon": ":material/crop_square:"},
-    {"key": "annotate", "label": "Anotasi", "icon": ":material/edit_note:"},
-    {"key": "export", "label": "Ukuran & Export", "icon": ":material/download:"},
+    {"key": "series", "label": "Series & Nilai", "icon": ":material/show_chart:"},
+    {"key": "legend", "label": "Legend", "icon": ":material/legend_toggle:"},
+    {"key": "frame", "label": "Bingkai", "icon": ":material/shapes:"},
+    {"key": "annotate", "label": "Anotasi", "icon": ":material/match_case:"},
+    {"key": "export", "label": "Ukuran & Export", "icon": ":material/file_save:"},
 ]
 
 if "annotations" not in st.session_state:
@@ -422,12 +455,14 @@ with st.sidebar:
         label_x = st.text_input("Label X", st.session_state.get("label_x_val", kol_x or ""), key="label_x_val")
         label_y = st.text_input("Label Y", st.session_state.get("label_y_val", kol_y or ""), key="label_y_val")
         label_size = st.number_input("Ukuran font label sumbu", min_value=6, max_value=30, value=11, step=1, key="label_size")
+        tick_size = st.number_input("Ukuran font tick (angka/label sumbu)", min_value=6, max_value=24, value=10, step=1, key="tick_size")
     judul = st.session_state.get("judul_val", "Judul Diagram")
     judul_size = st.session_state.get("judul_size", 14)
     font_nama = st.session_state.get("font_nama", "Sans Serif (default)")
     label_x = st.session_state.get("label_x_val", kol_x or "")
     label_y = st.session_state.get("label_y_val", kol_y or "")
     label_size = st.session_state.get("label_size", 11)
+    tick_size = st.session_state.get("tick_size", 10)
 
     # ---------------- Panel: Sumbu X ----------------
     if active_panel == "xaxis":
@@ -591,7 +626,7 @@ with st.sidebar:
 st.title("Ploots")
 st.caption("Diagram Teks — tempel data teks, susun diagram, ekspor siap pakai.")
 
-tab_plot, tab_data = st.tabs([":material/show_chart: Plot View", ":material/table_view: Data View"])
+tab_plot, tab_data = st.tabs([":material/show_chart: Plot View", ":material/database: Data View"])
 
 with tab_data:
     st.subheader("Data")
@@ -895,8 +930,10 @@ with tab_plot:
             if jenis not in ("box", "violin"):
                 value_axis.set_major_locator(mticker.MaxNLocator(nbins=y_nticks))
 
-            ax.tick_params(axis="x", direction=x_tick_dir)
-            ax.tick_params(axis="y", direction=y_tick_dir)
+            ax.tick_params(axis="x", direction=x_tick_dir, labelsize=tick_size)
+            ax.tick_params(axis="y", direction=y_tick_dir, labelsize=tick_size)
+            if ax2 is not None:
+                ax2.tick_params(axis="y", labelsize=tick_size)
 
             if x_grid:
                 ax.xaxis.grid(True, linestyle=grid_style, alpha=grid_alpha)
